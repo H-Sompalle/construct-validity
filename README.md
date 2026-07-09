@@ -1,6 +1,9 @@
-# Construct Validity Audit — Reproduction Code
+# Construct Validity
 
-Reproduces the empirical analyses from **Construct Validity Failures in Agentic AI Benchmarks: An Empirical Audit** (KDD '26 Workshop).
+Paper and reproduction code for **Construct Validity Failures in Agentic AI Benchmarks: An Empirical Audit** (KDD '26 Workshop).
+
+- **Paper:** `Construct_Validity_camera_ready_ACM_template.pdf`
+- **Repository:** https://github.com/H-Sompalle/construct-validity
 
 ## Setup
 
