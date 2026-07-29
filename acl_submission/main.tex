@@ -27,11 +27,10 @@
 %   Bengaluru, India \\
 %   \texttt{himaneeshsompalle7@gmail.com}}
 
-\begin{abstract}
-Agent benchmarks are increasingly used to rank language models, guide procurement decisions, and set research priorities---yet what, exactly, do they measure? We apply construct validity analysis, drawn from psychometrics, to five major benchmarks spanning tool-use, code generation, and reasoning. Analyzing 15 models across these benchmarks, we find that cross-benchmark Spearman correlations are moderate at best (mean $\rho = 0.67$, range 0.10--0.92), 22\% of model pairs exhibit ranking inversions across benchmarks, and reasoning-specialized models (o1, o3-mini, o4-mini) that place in the top five on GPQA Diamond and MMLU-Pro drop to 6th--12th on tool-use benchmarks. The correlation between $\tau$-bench Airline and MMLU-Pro is 0.10 (bootstrap 95\% CI $[-0.87, 0.95]$, $n = 6$)---no evidence of a positive relationship---despite both being used to evaluate ``agent ability.'' These findings show that scores on these benchmarks do not induce a stable cross-benchmark model ranking and are consistent with multiple distinct underlying constructs rather than a unified ``agent ability''---making aggregate scores and single-number rankings misleading for the models and benchmarks practitioners consult today. We propose five desiderata for construct-valid agent evaluation and argue that benchmarks should report per-construct profiles rather than aggregate rankings.
-\end{abstract}
-
 \maketitle
+\begin{abstract}
+Agent benchmarks are increasingly used to rank language models, guide procurement decisions, and set research priorities---yet what, exactly, do they measure? We apply construct validity analysis, drawn from psychometrics, to five major benchmarks spanning tool-use, code generation, and reasoning. Analyzing 15 models across these benchmarks, we find that cross-benchmark Spearman correlations are moderate at best (mean $\rho = 0.67$, range 0.10--0.92), 22\% of model pairs exhibit ranking inversions across benchmarks, and reasoning-specialized models (o1, o3-mini, o4-mini) that place in the top five on GPQA Diamond and MMLU-Pro fall as low as 12th of 15 on $\tau$-Retail and 9th of 10 on $\tau$-Airline (79th--89th percentile of their respective fields). The correlation between $\tau$-bench Airline and MMLU-Pro is 0.10 (bootstrap 95\% CI $[-0.87, 0.95]$, $n = 6$)---no evidence of a positive relationship---despite both being used to evaluate ``agent ability.'' These findings show that scores on these benchmarks do not induce a stable cross-benchmark model ranking and are consistent with multiple distinct underlying constructs rather than a unified ``agent ability''---making aggregate scores and single-number rankings misleading for the models and benchmarks practitioners consult today. We propose five desiderata for construct-valid agent evaluation and argue that benchmarks should report per-construct profiles rather than aggregate rankings.
+\end{abstract}
 
 \section{Introduction}
 The proliferation of agent benchmarks has been remarkably rapid. In 2024--2025 alone, the community produced AgentBench~\cite{liu2024agentbench}, SWE-bench~\cite{jimenez2024swebench}, WebArena~\cite{zhou2024webarena}, GAIA~\cite{mialon2024gaia}, $\tau$-bench~\cite{yao2024taubench}, and BFCL~\cite{patil2025bfcl}, among others. Each claims to measure some aspect of ``agent ability''---a model's capacity to plan, use tools, navigate environments, write code, or converse with users over multiple turns.
@@ -99,37 +98,11 @@ OpenAI & GPT-4o, GPT-4.5, & Mid \\
 \end{tabular}
 \end{table}
 
-\textit{Score provenance and comparability.} All scores were recorded in May--June 2026 and re-verified against primary sources in July 2026. $\tau$-bench scores are taken from the Sierra Research leaderboard (as mirrored by llm-stats.com) and provider announcements, under the benchmark's standard configuration (pass\textasciicircum{}1, standard user simulator); $\tau$-bench results are known to be sensitive to the user-simulator model and agent scaffold, and third-party reproductions with modified simulators report different absolute scores, so we use only official-leaderboard and provider figures under the standard setting. SWE-bench Verified scores come from swebench.com and official model cards, using each provider's standard single-attempt agentic scaffold without parallel test-time compute (hence 77.2 for Claude Sonnet 4.5 rather than the 82.0 parallel-compute figure). GPQA Diamond scores come from provider launch announcements and model cards; Claude scores are without extended thinking, and o-series scores are at default reasoning effort (o3-mini at medium). MMLU-Pro scores come from official model cards and the MMLU-Pro leaderboard; prompting protocols vary somewhat across providers. We therefore cannot guarantee full cross-provider comparability within a column: providers self-report under nominally standard but not identically instrumented protocols. This residual protocol variance is itself a construct-validity concern---it motivates our desiderata D1 and D4---and it means our correlations should be read as properties of the published-score ecosystem that practitioners actually consult, not of a controlled experiment.
+\textit{Score provenance and comparability.} All scores were recorded in May--June 2026 and re-verified against primary sources in July 2026. $\tau$-bench scores use the Sierra Research leaderboard (mirrored by llm-stats.com) and provider announcements under the standard configuration (pass\textasciicircum{}1, standard user simulator). SWE-bench Verified scores use each provider's standard single-attempt agentic scaffold without parallel test-time compute (hence 77.2 for Claude Sonnet 4.5 rather than the 82.0 parallel-compute figure). GPQA Diamond and MMLU-Pro scores come from provider announcements and model cards (Claude without extended thinking; o-series at default reasoning effort). Providers self-report under nominally standard but not identically instrumented protocols, so residual protocol variance remains; our correlations should be read as properties of the published-score ecosystem practitioners consult, not of a controlled experiment.
 
 Not every model has been evaluated on every benchmark; we use pairwise-complete observations for correlation analyses, reporting sample sizes alongside each statistic.
 
-Table~\ref{tab:scores} presents the complete cross-benchmark score matrix. Data availability varies: $\tau$-Retail has 100\% coverage (15/15 models), while $\tau$-Airline has 67\% (10/15). Models without published scores on a benchmark are excluded from pairwise analyses involving that benchmark.
-
-\begin{table*}[t]
-\caption{Cross-benchmark scores for 15 models. Scores are on native benchmark scales (0--100). Dashes indicate no published score. See \S3.2 for per-benchmark sources, dates, and evaluation configurations.}
-\label{tab:scores}
-\begin{tabular}{lccccc}
-\toprule
-Model & $\tau$-Retail & $\tau$-Airline & SWE-bench V. & GPQA Dia. & MMLU-Pro \\
-\midrule
-Claude 3.5 Sonnet & 69.2 & 46.0 & 49.0 & 65.0 & 78.0 \\
-Claude 3.7 Sonnet & 81.2 & 58.4 & 62.3 & 68.0 & 78.2 \\
-Claude Sonnet 4 & 80.5 & 60.0 & 72.7 & 75.4 & --- \\
-Claude Opus 4 & 81.4 & 59.6 & 72.5 & 79.6 & --- \\
-Claude Opus 4.1 & 82.4 & 56.0 & --- & --- & --- \\
-Claude Sonnet 4.5 & 86.2 & 70.0 & 77.2 & 83.4 & --- \\
-GPT-4o & 60.3 & --- & 33.2 & 53.6 & 72.6 \\
-GPT-4.5 & 68.4 & 50.0 & 38.0 & 71.4 & 73.6 \\
-GPT-4.1 & 68.0 & 49.4 & 54.6 & 56.5 & 73.6 \\
-GPT-4.1 mini & 55.8 & --- & 28.9 & 43.7 & 64.2 \\
-GPT-4.1 nano & 22.6 & --- & --- & --- & 55.6 \\
-o1 & 70.8 & 50.0 & 48.9 & 78.0 & 83.6 \\
-o3-mini & 57.6 & --- & 49.3 & 77.0 & 80.0 \\
-o4-mini & 71.8 & 49.2 & 68.1 & 81.4 & 81.4 \\
-Claude 3.5 Haiku & 51.0 & --- & 40.6 & 41.0 & 65.0 \\
-\bottomrule
-\end{tabular}
-\end{table*}
+The complete cross-benchmark score matrix is in Appendix~\ref{app:scores}. Data availability varies: $\tau$-Retail has 100\% coverage (15/15 models), while $\tau$-Airline has 67\% (10/15). Models without published scores on a benchmark are excluded from pairwise analyses involving that benchmark.
 
 \subsection{Analyses}
 We conduct four analyses:
@@ -142,7 +115,7 @@ We conduct four analyses:
 
 \textit{4.~Rank profile analysis.} For models with scores on 4+ benchmarks, we examine the spread of ranks across benchmarks. Because benchmarks rank different numbers of models ($\tau$-Airline $n{=}10$, $\tau$-Retail $n{=}15$), we percentile-normalize each rank to $[0,1]$ via $(\mathrm{rank}-1)/(n-1)$ (0 = best, 1 = worst) and report the percentile spread (max $-$ min). A model with a large percentile spread is ``construct-ambiguous'': its relative standing cannot be summarized by a single ranking.
 
-\textit{Statistical considerations.} We use Spearman's rank correlation ($\rho$) rather than Pearson's $r$ because we are interested in ordinal relationships (rankings) rather than linear relationships between scores on different scales. For every pairwise $\rho$ we additionally report a percentile bootstrap 95\% confidence interval (10{,}000 resamples of the pairwise-complete model set). All significance tests use $\alpha = 0.05$. Because we conduct 10 pairwise comparisons, we note which results survive Bonferroni correction ($\alpha_{\mathrm{adj}} = 0.005$) in addition to the nominal threshold. Sample sizes for pairwise analyses range from 6 to 15; we flag all correlations computed on fewer than 8 observations as having limited statistical power, report them for completeness only, and base no headline claim solely on them.
+\textit{Statistical considerations.} We use Spearman's rank correlation ($\rho$) rather than Pearson's $r$ because we are interested in ordinal relationships (rankings) rather than linear relationships between scores on different scales. For every pairwise $\rho$ we additionally report a percentile bootstrap 95\% confidence interval (10{,}000 resamples of the pairwise-complete model set).\footnote{At the smallest sample sizes (especially $n = 6$), percentile bootstrap intervals are themselves unstable and should be read as conveying imprecision rather than as calibrated frequentist coverage.} All significance tests use $\alpha = 0.05$. Because we conduct 10 pairwise comparisons, we note which results survive Bonferroni correction ($\alpha_{\mathrm{adj}} = 0.005$) in addition to the nominal threshold. Sample sizes for pairwise analyses range from 6 to 15; we flag all correlations computed on fewer than 8 observations as having limited statistical power, report them for completeness only, and base no headline claim solely on them.
 
 \section{Results}\label{sec:results}
 \subsection{Cross-Benchmark Correlations Are Moderate}
@@ -194,14 +167,7 @@ The inversions are not limited to cross-domain comparisons. Even within the agen
 The inversion rate is also systematically higher when $\tau$-Airline is involved (22--40\%) compared to pairs not involving $\tau$-Airline (9--23\%), consistent with the correlation analysis suggesting $\tau$-Airline measures a partially distinct construct.
 
 \subsection{Reasoning Specialization Does Not Transfer to Tool Use}
-The most striking construct validity failure involves OpenAI's reasoning-specialized models. Figure~\ref{fig:scatter} visualizes the score relationships. o4-mini ranks \textbf{2nd} on GPQA Diamond (81.4\%) and \textbf{2nd} on MMLU-Pro (81.4\%), but drops to \textbf{6th} on $\tau$-Retail (71.8\%) and \textbf{9th} on $\tau$-Airline (49.2\%). o1 ranks \textbf{1st} on MMLU-Pro and 4th on GPQA, but 7th on $\tau$-Retail, 7th on $\tau$-Airline, and 9th on SWE-bench. o3-mini ranks 3rd on MMLU-Pro and 5th on GPQA but \textbf{12th} on $\tau$-Retail.
-
-\begin{figure*}[t]
-\centering
-\includegraphics[width=0.95\textwidth]{fig2_scatter.pdf}
-\caption{Score relationships between $\tau$-bench Retail and two other benchmarks. Left: tool-use vs.\ code agent scores are strongly correlated ($\rho = 0.81$), with Claude models clustering top-right. Right: tool-use vs.\ reasoning scores are also correlated ($\rho = 0.76$), but the o-series models (top-left region) rank highly on reasoning while placing mid-pack or lower on tool-use.}
-\label{fig:scatter}
-\end{figure*}
+The most striking construct validity failure involves OpenAI's reasoning-specialized models. o4-mini ranks \textbf{2nd} on GPQA Diamond (81.4\%) and \textbf{2nd} on MMLU-Pro (81.4\%), but drops to \textbf{6th} on $\tau$-Retail (71.8\%) and \textbf{9th} of 10 on $\tau$-Airline (49.2\%; 89th percentile). o1 ranks \textbf{1st} on MMLU-Pro and 4th on GPQA, but 7th on $\tau$-Retail, 7th on $\tau$-Airline, and 9th on SWE-bench. o3-mini ranks 3rd on MMLU-Pro and 5th on GPQA but \textbf{12th} of 15 on $\tau$-Retail (79th percentile). Appendix~\ref{app:scatter} visualizes the underlying score relationships.
 
 These models invest heavily in extended reasoning (chain-of-thought, test-time compute scaling), which dramatically improves performance on reasoning benchmarks. But sustained multi-turn tool-use with policy constraints---as tested by $\tau$-bench---appears to require a different capability profile that reasoning specialization does not provide.
 
@@ -209,12 +175,12 @@ Importantly, the dissociation is asymmetric. Reasoning specialization does not t
 
 Figure~\ref{fig:profiles} visualizes the complete rank profiles. The pervasive crossing of lines---particularly between the agent and reasoning columns---represents the central claim of this paper made visible: there is no stable ``model ranking'' that holds across benchmarks. Parallel lines would indicate that a single latent ability explains performance; the extensive crossing we observe is inconsistent with a uni-dimensional model.
 
-\begin{figure*}[t]
+\begin{figure}[t]
 \centering
-\includegraphics[width=0.92\textwidth]{fig3_profiles.pdf}
-\caption{Model rank profiles across benchmarks. Each line traces one model's ranking (1 = best) from benchmark to benchmark. Parallel lines would indicate stable rankings; the extensive crossing visible here---especially between the agent benchmarks (left three columns) and reasoning benchmarks (right two columns)---confirms that rankings are benchmark-dependent. The o-series models (o1, o3-mini, o4-mini) show the most dramatic slope changes, rising sharply on reasoning benchmarks and falling on tool-use benchmarks; Claude Sonnet 4.5 is the notable exception, holding rank 1 on every benchmark on which it is scored.}
+\includegraphics[width=\columnwidth]{fig3_profiles.pdf}
+\caption{Model rank profiles across benchmarks (1 = best). Parallel lines would indicate stable rankings; the extensive crossing---especially between agent and reasoning columns---confirms that rankings are benchmark-dependent. The o-series models show the sharpest slope changes; Claude Sonnet 4.5 holds rank 1 wherever scored.}
 \label{fig:profiles}
-\end{figure*}
+\end{figure}
 
 The practical consequence is immediate. A practitioner consulting a composite leaderboard that averages these five benchmarks would get a ranking that is neither the tool-use ranking, nor the reasoning ranking, nor the code ranking---it would be an unprincipled mixture that misrepresents every model's actual capability profile.
 
@@ -250,14 +216,14 @@ Our analysis motivates five requirements that benchmark designers should satisfy
 
 \textit{D2: Convergent validity evidence.} If a benchmark claims to measure ``tool-use ability,'' it should demonstrate correlation ($\rho > 0.80$) with other established tool-use benchmarks. Our data shows that even $\tau$-Retail and $\tau$-Airline---which share the same evaluation framework, task structure, and metric---correlate at only 0.75, leaving roughly 44\% of the rank variance in one benchmark unexplained by the other ($1 - \rho^2 \approx 0.44$), likely attributable to domain-specific knowledge (retail policies vs.\ airline policies) rather than general tool-use ability. Benchmark papers should report cross-benchmark correlations as standard validation evidence, just as psychological test manuals report convergent validity coefficients.
 
-\textit{D3: Discriminant validity evidence.} A tool-use benchmark should produce rankings that are \emph{different} from reasoning benchmarks. If they produce identical rankings, the tool-use benchmark is not measuring anything beyond general capability. Our finding that $\tau$-Airline $\times$ MMLU-Pro $= 0.10$ is encouraging from a discriminant validity perspective---it suggests $\tau$-Airline measures something genuinely distinct from broad knowledge---though the small overlapping sample ($n = 6$) means this estimate is imprecise. Conversely, $\tau$-Retail's high correlations with the reasoning benchmarks (0.76--0.80) suggest weaker discriminant validity. Either way, this should be demonstrated intentionally as part of benchmark validation, not discovered post hoc by external auditors.
+\textit{D3: Discriminant validity evidence.} A tool-use benchmark should produce rankings that are \emph{different} from reasoning benchmarks. If they produce identical rankings, the tool-use benchmark is not measuring anything beyond general capability. Our $\tau$-Airline $\times$ MMLU-Pro estimate ($\rho = 0.10$, CI $[-0.87, 0.95]$, $n = 6$) is too imprecise to support a discriminant inference in either direction---the interval comfortably contains both near-zero and strongly positive values. $\tau$-Retail's high correlations with the reasoning benchmarks (0.76--0.80) are more informative and suggest weaker discriminant validity for that benchmark. The point of D3 is that such evidence should be established deliberately by benchmark authors with adequate overlapping samples, not discovered post hoc by external auditors from underpowered pairwise comparisons.
 
 \textit{D4: Per-construct score reporting.} Benchmarks with heterogeneous sub-tasks should report per-sub-task scores, not a single aggregate. Our analysis shows that $\tau$-Retail and $\tau$-Airline rankings diverge substantially; an aggregate $\tau$-bench score would obscure this divergence and mislead practitioners who care about one domain but not the other. Leaderboards should display \emph{capability profiles}---multi-column tables or radar charts showing performance on each sub-construct---rather than single composite numbers. This mirrors best practices in psychometrics, where intelligence tests report verbal, quantitative, and spatial sub-scores alongside any composite.
 
 \textit{D5: Ranking stability disclosure.} Benchmark papers should report the expected ranking inversion rate with respect to related benchmarks. A benchmark where 40\% of model pairs invert relative to MMLU-Pro (as $\tau$-Airline does) should disclose this prominently, so practitioners know that MMLU-Pro rankings do not transfer to $\tau$-Airline performance. Concretely, we suggest benchmark papers include a table showing $\rho$ and inversion rate with at least three comparison benchmarks, analogous to the cross-validation tables standard in psychometric test manuals.
 
 \subsection{Applying the Desiderata}
-Table~\ref{tab:scorecard} applies our five desiderata to the benchmarks in this study. No benchmark satisfies all five, but $\tau$-bench comes closest: it defines its construct explicitly, publishes domain-specific scores, and $\tau$-Airline's discriminant profile is empirically strong. SWE-bench Verified satisfies D1 clearly (``resolve real GitHub issues'') but does not report cross-benchmark validation. GPQA and MMLU-Pro, as reasoning benchmarks, are not designed as agent evaluations but are routinely included in agent-focused composite leaderboards---a practice our analysis shows is problematic.
+Table~\ref{tab:scorecard} applies our five desiderata to the benchmarks in this study. No benchmark satisfies all five, but $\tau$-bench comes closest: it defines its construct explicitly and publishes domain-specific scores, even though its cross-domain discriminant evidence remains underpowered. SWE-bench Verified satisfies D1 clearly (``resolve real GitHub issues'') but does not report cross-benchmark validation. GPQA and MMLU-Pro, as reasoning benchmarks, are not designed as agent evaluations but are routinely included in agent-focused composite leaderboards---a practice our analysis shows is problematic.
 
 \begin{table}[h]
 \caption{Desiderata scorecard. \cmark~= satisfied, \pmark~= partially, \xmark~= not satisfied. D1: explicit construct. D2: convergent validity. D3: discriminant validity. D4: per-construct scores. D5: stability disclosure.}
@@ -282,11 +248,7 @@ The striking preponderance of unmet criteria in Table~\ref{tab:scorecard} is not
 
 \textit{Toward a construct map of agent capabilities.} Our correlation structure suggests at least two---and possibly three---distinct capability clusters. The first cluster, which we tentatively label \emph{structured tool-use}, encompasses $\tau$-Retail, $\tau$-Airline, and SWE-bench (mean within-cluster $\rho = 0.74$). These benchmarks all require multi-step tool interaction under constraints. The second cluster, \emph{academic reasoning}, includes GPQA and MMLU-Pro ($\rho = 0.92$). $\tau$-Airline may constitute the embryo of a third cluster, \emph{conversational persistence under policy constraints}, given its weak, non-significant correlations with the reasoning benchmarks and only moderate correlation with the other agent benchmarks. We emphasize that this clustering is tentative and requires confirmation with larger model sets and additional benchmarks; in particular, $\tau$-Retail's high correlations with the reasoning cluster show that the boundary between clusters is soft. Nonetheless, it provides an initial framework for organizing the rapidly expanding benchmark landscape.
 
-\textit{What does $\tau$-Airline actually measure?} The near-zero point estimate between $\tau$-Airline and MMLU-Pro ($\rho = 0.10$, CI $[-0.87, 0.95]$, $n = 6$) and the weak, non-significant correlation with GPQA ($\rho = 0.49$) deserve further investigation. $\tau$-Airline tests an agent's ability to handle airline customer service interactions: rebooking flights, applying cancellation policies, and managing user frustration---all while following complex, domain-specific rules. Performance appears to depend on a capability profile that reasoning benchmarks capture only partially: the ability to maintain conversational coherence over many turns, apply domain rules consistently without hallucinating policy details, and recover gracefully from misunderstandings. This capability---which we might call ``situated policy compliance''---is critical for real-world agent deployments but has no established evaluation methodology outside of $\tau$-bench.
-
-\textit{The ``g factor'' question.} In psychometrics, the debate over whether intelligence reduces to a single general factor ($g$) or multiple independent factors has a direct analog in AI evaluation. Our data suggests that ``agent ability'' does not reduce to a single factor: the correlation structure reveals at least two clusters with substantial unexplained variance between them. This multi-factor structure has implications for model development: improving reasoning (which helps GPQA) may not improve tool-use (which helps $\tau$-bench). The reasoning-specialized models (o1, o3-mini, o4-mini) are a natural experiment consistent with this: their architecture explicitly optimizes for extended reasoning, which produces dramatic improvements on GPQA and MMLU-Pro while leaving their tool-use rankings mid-pack. At the same time, the two factors are positively correlated rather than orthogonal, and Claude Sonnet 4.5's simultaneous first-place rank on both clusters shows that the factors can be jointly maximized---the analog of a model with both high verbal and high spatial sub-scores.
-
-\textit{Limitations.} Our analysis faces several limitations, and our conclusions should be read as claims about the selected benchmarks, models, and published scores rather than about agent capability in general. First, the sample of 15 models, while spanning capability tiers and providers, is not exhaustive; open-weight models (Llama, Qwen, Mistral) are underrepresented due to limited benchmark coverage. Prior measurement-theoretic guidance for multi-trait benchmark validation recommends on the order of 20+ models for stable cross-benchmark correlation estimates~\cite{evaleval}; our pairwise samples of 6--15 fall short of that threshold, which is why we emphasize confidence intervals and treat the smallest pairs as directional rather than definitive. Second, not all models are evaluated on all benchmarks, requiring pairwise-complete analysis with varying sample sizes (6--15 per pair); the smallest pairs have limited statistical power, and the $\tau$-Airline correlations in particular should be interpreted cautiously. Third, we analyze published aggregate scores rather than per-task scores. Aggregate scores cannot separate item difficulty, domain knowledge, tool-use scaffolding, evaluator differences, and model-specific prompting effects from the latent capability of interest; our correlational evidence therefore constrains, but cannot identify, the underlying factor structure. Formally, what our data establishes is that the selected benchmark scores do not induce stable rankings across the selected models---a multi-factor capability structure is the most natural explanation, but confirming it requires item-level factor analysis. We note that our separate treatment of $\tau$-bench's retail and airline domains is itself a sub-task-level analysis of one benchmark family, and it revealed substantial within-family divergence; comparable decompositions of the other benchmarks require item-level data that is not currently published. Fourth, published scores are produced under heterogeneous evaluation protocols (e.g., reasoning-effort settings, extended-thinking modes, user-simulator models, scaffolds); we use each provider's standard single-attempt configuration where multiple figures exist, but residual protocol variance cannot be fully eliminated. Finally, our benchmark selection does not cover every major benchmark: GAIA, WebArena, OSWorld, and BFCL were excluded because, at data collection, too few of our 15 models had published scores on them under comparable configurations to support pairwise analysis. Whether the two-cluster structure persists when these benchmarks are added is an open empirical question; our released analysis code makes this straightforward to test as coverage grows.
+\textit{What does $\tau$-Airline actually measure?} The near-zero point estimate between $\tau$-Airline and MMLU-Pro ($\rho = 0.10$, CI $[-0.87, 0.95]$, $n = 6$) and the weak, non-significant correlation with GPQA ($\rho = 0.49$) deserve further investigation---though, as noted above, the former interval is too wide for a stable discriminant claim. $\tau$-Airline tests an agent's ability to handle airline customer service interactions: rebooking flights, applying cancellation policies, and managing user frustration---all while following complex, domain-specific rules. Performance appears to depend on a capability profile that reasoning benchmarks capture only partially: the ability to maintain conversational coherence over many turns, apply domain rules consistently without hallucinating policy details, and recover gracefully from misunderstandings. This capability---which we might call ``situated policy compliance''---is critical for real-world agent deployments but has no established evaluation methodology outside of $\tau$-bench.
 
 {\sloppy
 \textit{Reproducibility.} All benchmark scores used in this analysis are drawn from publicly available leaderboards (llm-stats.com, swebench.com) and official model cards, as recorded in May--June 2026 and re-verified against primary sources in July 2026. We release the complete cross-benchmark score matrix (Table~\ref{tab:scores}), correlation analysis code, and figure generation scripts.\footnote{Anonymized reproduction repository URL omitted for review; code and score matrix will be released upon acceptance.} We note that leaderboard scores are updated continuously as providers re-evaluate models; our analysis represents a snapshot, and we encourage replication on updated data. The pairwise-complete analysis methodology is robust to the addition of new models: adding a model requires only that it has been evaluated on at least two benchmarks.\par}
@@ -300,5 +262,55 @@ Looking forward, we see three priority actions. First, benchmark designers shoul
 
 As agent benchmarks increasingly shape research priorities, procurement decisions, and public perception of AI progress, psychometric rigor is not optional. It is a prerequisite for trustworthy evaluation.
 
+\section*{Limitations}
+Our analysis faces several limitations, and our conclusions should be read as claims about the selected benchmarks, models, and published scores rather than about agent capability in general. First, the sample of 15 models, while spanning capability tiers and providers, is not exhaustive; open-weight models (Llama, Qwen, Mistral) are underrepresented due to limited benchmark coverage. Prior measurement-theoretic guidance for multi-trait benchmark validation recommends on the order of 20+ models for stable cross-benchmark correlation estimates~\cite{evaleval}; our pairwise samples of 6--15 fall short of that threshold, which is why we emphasize confidence intervals and treat the smallest pairs as directional rather than definitive. Second, not all models are evaluated on all benchmarks, requiring pairwise-complete analysis with varying sample sizes (6--15 per pair); the smallest pairs have limited statistical power, and the $\tau$-Airline correlations in particular should be interpreted cautiously. Third, we analyze published aggregate scores rather than per-task scores. Aggregate scores cannot separate item difficulty, domain knowledge, tool-use scaffolding, evaluator differences, and model-specific prompting effects from the latent capability of interest; our correlational evidence therefore constrains, but cannot identify, the underlying factor structure. Formally, what our data establishes is that the selected benchmark scores do not induce stable rankings across the selected models---a multi-factor capability structure is the most natural explanation, but confirming it requires item-level factor analysis. We note that our separate treatment of $\tau$-bench's retail and airline domains is itself a sub-task-level analysis of one benchmark family, and it revealed substantial within-family divergence; comparable decompositions of the other benchmarks require item-level data that is not currently published. Fourth, published scores are produced under heterogeneous evaluation protocols (e.g., reasoning-effort settings, extended-thinking modes, user-simulator models, scaffolds); we use each provider's standard single-attempt configuration where multiple figures exist, but residual protocol variance cannot be fully eliminated. Finally, our benchmark selection does not cover every major benchmark: GAIA, WebArena, OSWorld, and BFCL were excluded because, at data collection, too few of our 15 models had published scores on them under comparable configurations to support pairwise analysis. Whether the two-cluster structure persists when these benchmarks are added is an open empirical question; our released analysis code makes this straightforward to test as coverage grows.
+
 \bibliography{custom}
+
+\clearpage
+\appendix
+\section{Cross-Benchmark Score Matrix}
+\label{app:scores}
+Table~\ref{tab:scores} reports the complete score matrix used in all analyses.
+
+\begin{table}[h]
+\centering
+\small
+\setlength{\tabcolsep}{3.5pt}
+\caption{Cross-benchmark scores for 15 models. Scores are on native benchmark scales (0--100). Dashes indicate no published score. See \S3.2 for per-benchmark sources, dates, and evaluation configurations.}
+\label{tab:scores}
+\begin{tabular}{lccccc}
+\toprule
+Model & $\tau$-Retail & $\tau$-Airline & SWE-bench V. & GPQA Dia. & MMLU-Pro \\
+\midrule
+Claude 3.5 Sonnet & 69.2 & 46.0 & 49.0 & 65.0 & 78.0 \\
+Claude 3.7 Sonnet & 81.2 & 58.4 & 62.3 & 68.0 & 78.2 \\
+Claude Sonnet 4 & 80.5 & 60.0 & 72.7 & 75.4 & --- \\
+Claude Opus 4 & 81.4 & 59.6 & 72.5 & 79.6 & --- \\
+Claude Opus 4.1 & 82.4 & 56.0 & --- & --- & --- \\
+Claude Sonnet 4.5 & 86.2 & 70.0 & 77.2 & 83.4 & --- \\
+GPT-4o & 60.3 & --- & 33.2 & 53.6 & 72.6 \\
+GPT-4.5 & 68.4 & 50.0 & 38.0 & 71.4 & 73.6 \\
+GPT-4.1 & 68.0 & 49.4 & 54.6 & 56.5 & 73.6 \\
+GPT-4.1 mini & 55.8 & --- & 28.9 & 43.7 & 64.2 \\
+GPT-4.1 nano & 22.6 & --- & --- & --- & 55.6 \\
+o1 & 70.8 & 50.0 & 48.9 & 78.0 & 83.6 \\
+o3-mini & 57.6 & --- & 49.3 & 77.0 & 80.0 \\
+o4-mini & 71.8 & 49.2 & 68.1 & 81.4 & 81.4 \\
+Claude 3.5 Haiku & 51.0 & --- & 40.6 & 41.0 & 65.0 \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\section{Score-Relationship Scatter Plots}
+\label{app:scatter}
+Figure~\ref{fig:scatter} shows pairwise score relationships for $\tau$-Retail against SWE-bench and GPQA.
+
+\begin{figure}[h]
+\centering
+\includegraphics[width=\columnwidth]{fig2_scatter.pdf}
+\caption{Score relationships between $\tau$-bench Retail and two other benchmarks. Left: tool-use vs.\ code agent ($\rho = 0.81$). Right: tool-use vs.\ reasoning ($\rho = 0.76$); o-series models rank highly on reasoning while placing mid-pack or lower on tool-use.}
+\label{fig:scatter}
+\end{figure}
+
 \end{document}
