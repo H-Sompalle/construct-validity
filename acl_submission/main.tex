@@ -1,64 +1,35 @@
-\documentclass[sigconf]{acmart}
-%% Camera-ready version, built on the official workshop template (acmart v2.18).
+\documentclass[11pt]{article}
 
+% Anonymous review version. Switch to [final] after acceptance.
+\usepackage[review]{acl}
+\usepackage{times}
+\usepackage{latexsym}
+\usepackage[T1]{fontenc}
+\usepackage[utf8]{inputenc}
+\usepackage{microtype}
+\usepackage{inconsolata}
+\usepackage{graphicx}
 \usepackage{booktabs}
 \usepackage{pifont}
-\usepackage{hyphenat}
+\usepackage{hyperref}
+
 \newcommand{\cmark}{\ding{51}}
 \newcommand{\xmark}{\ding{55}}
 \newcommand{\pmark}{$\sim$}
 
-%% Rights management information.
-\setcopyright{acmlicensed}
-\copyrightyear{2026}
-\acmYear{2026}
-\acmDOI{}
-\acmConference[KDD '26 Workshop]{Workshop on Evaluation and Trustworthiness of Agentic AI}{August 2026}{Jeju, Korea}
-\acmBooktitle{Proceedings of Workshop on Evaluation and Trustworthiness of Agentic AI (KDD '26 Workshop)}
-\acmISBN{}
-
 \begin{document}
-
 \title{Construct Validity Failures in Agentic AI Benchmarks:\\An Empirical Audit}
 
-\author{Himaneesh Sompalle}
-\affiliation{%
-  \institution{Stonehill International School}
-  \city{Bengaluru}
-  \country{India}}
-\email{himaneeshsompalle7@gmail.com}
+\author{Anonymous Authors}
+% Anonymous submission for review. Uncomment for camera-ready:
+% \author{Himaneesh Sompalle \\
+%   Stonehill International School \\
+%   Bengaluru, India \\
+%   \texttt{himaneeshsompalle7@gmail.com}}
 
 \begin{abstract}
 Agent benchmarks are increasingly used to rank language models, guide procurement decisions, and set research priorities---yet what, exactly, do they measure? We apply construct validity analysis, drawn from psychometrics, to five major benchmarks spanning tool-use, code generation, and reasoning. Analyzing 15 models across these benchmarks, we find that cross-benchmark Spearman correlations are moderate at best (mean $\rho = 0.67$, range 0.10--0.92), 22\% of model pairs exhibit ranking inversions across benchmarks, and reasoning-specialized models (o1, o3-mini, o4-mini) that place in the top five on GPQA Diamond and MMLU-Pro drop to 6th--12th on tool-use benchmarks. The correlation between $\tau$-bench Airline and MMLU-Pro is 0.10 (bootstrap 95\% CI $[-0.87, 0.95]$, $n = 6$)---no evidence of a positive relationship---despite both being used to evaluate ``agent ability.'' These findings show that scores on these benchmarks do not induce a stable cross-benchmark model ranking and are consistent with multiple distinct underlying constructs rather than a unified ``agent ability''---making aggregate scores and single-number rankings misleading for the models and benchmarks practitioners consult today. We propose five desiderata for construct-valid agent evaluation and argue that benchmarks should report per-construct profiles rather than aggregate rankings.
 \end{abstract}
-
-%% CCS concepts generated with the ACM CCS tool (https://dl.acm.org/ccs).
-\begin{CCSXML}
-<ccs2012>
-<concept>
-<concept_id>10002944.10011122.10002946</concept_id>
-<concept_desc>General and reference~Measurement</concept_desc>
-<concept_significance>500</concept_significance>
-</concept>
-<concept>
-<concept_id>10002944.10011122.10011123</concept_id>
-<concept_desc>General and reference~Evaluation</concept_desc>
-<concept_significance>500</concept_significance>
-</concept>
-<concept>
-<concept_id>10010147.10010178</concept_id>
-<concept_desc>Computing methodologies~Artificial intelligence</concept_desc>
-<concept_significance>300</concept_significance>
-</concept>
-</ccs2012>
-\end{CCSXML}
-
-\ccsdesc[500]{General and reference~Measurement}
-\ccsdesc[500]{General and reference~Evaluation}
-\ccsdesc[300]{Computing methodologies~Artificial intelligence}
-
-
-\keywords{construct validity, agent benchmarks, evaluation, psychometrics, tool use}
 
 \maketitle
 
@@ -80,7 +51,7 @@ Our contributions are: (1)~To our knowledge, the first systematic construct vali
 \section{Background: Construct Validity in AI Evaluation}
 \textit{Construct validity.} Introduced by Cronbach and Meehl~\cite{cronbach1955construct}, construct validity asks whether a test measures the theoretical attribute it claims to measure. A test has high construct validity when: (a)~it correlates with other tests of the same construct (convergent validity), (b)~it does not correlate with tests of unrelated constructs (discriminant validity), and (c)~its items internally cohere (internal consistency).
 
-\textit{Prior critiques in NLP evaluation.} Schlangen~\cite{schlangen2021targeting} argued that NLP benchmarks often lack well-defined constructs, instead testing an undefined mix of abilities. Raji et al.~\cite{raji2021ai} showed that benchmark performance frequently fails to predict real-world utility. Bowman and Dahl~\cite{bowman2021what} warned against the ``benchmark treadmill'' where saturated benchmarks are replaced by harder ones without examining whether the measured construct has changed. Our prior work~\cite{evaleval} formalized these concerns for MCP tool-use evaluation, showing that prominent MCP benchmarks implicitly target divergent constructs without explicitly operationalizing them. The present work extends this line of critique to the agent evaluation domain, which has not yet received systematic psychometric scrutiny.
+\textit{Prior critiques in NLP evaluation.} Schlangen~\cite{schlangen2021targeting} argued that NLP benchmarks often lack well-defined constructs, instead testing an undefined mix of abilities. Raji et al.~\cite{raji2021ai} showed that benchmark performance frequently fails to predict real-world utility. Bowman and Dahl~\cite{bowman2021what} warned against the ``benchmark treadmill'' where saturated benchmarks are replaced by harder ones without examining whether the measured construct has changed. Sompalle~\cite{evaleval} formalized these concerns for MCP tool-use evaluation, showing that prominent MCP benchmarks implicitly target divergent constructs without explicitly operationalizing them. The present work extends this line of critique to the agent evaluation domain, which has not yet received systematic psychometric scrutiny.
 
 \textit{The agent benchmark landscape.} Current agent benchmarks vary widely in what they test. $\tau$-bench~\cite{yao2024taubench} evaluates tool-agent-user interaction in domain-specific scenarios (retail, airline), requiring multi-turn conversation and policy compliance. SWE-bench~\cite{jimenez2024swebench} tests code generation agents on real GitHub issues. GAIA~\cite{mialon2024gaia} tests multi-step question answering requiring web browsing and document parsing. GPQA Diamond~\cite{rein2024gpqa} tests graduate-level scientific reasoning. MMLU-Pro~\cite{wang2024mmlupro} tests broad knowledge across 14 academic domains. Despite measuring apparently different things, all are cited as evidence of ``model capability'' in aggregate leaderboards that rank models with a single composite score.
 
@@ -318,7 +289,7 @@ The striking preponderance of unmet criteria in Table~\ref{tab:scorecard} is not
 \textit{Limitations.} Our analysis faces several limitations, and our conclusions should be read as claims about the selected benchmarks, models, and published scores rather than about agent capability in general. First, the sample of 15 models, while spanning capability tiers and providers, is not exhaustive; open-weight models (Llama, Qwen, Mistral) are underrepresented due to limited benchmark coverage. Prior measurement-theoretic guidance for multi-trait benchmark validation recommends on the order of 20+ models for stable cross-benchmark correlation estimates~\cite{evaleval}; our pairwise samples of 6--15 fall short of that threshold, which is why we emphasize confidence intervals and treat the smallest pairs as directional rather than definitive. Second, not all models are evaluated on all benchmarks, requiring pairwise-complete analysis with varying sample sizes (6--15 per pair); the smallest pairs have limited statistical power, and the $\tau$-Airline correlations in particular should be interpreted cautiously. Third, we analyze published aggregate scores rather than per-task scores. Aggregate scores cannot separate item difficulty, domain knowledge, tool-use scaffolding, evaluator differences, and model-specific prompting effects from the latent capability of interest; our correlational evidence therefore constrains, but cannot identify, the underlying factor structure. Formally, what our data establishes is that the selected benchmark scores do not induce stable rankings across the selected models---a multi-factor capability structure is the most natural explanation, but confirming it requires item-level factor analysis. We note that our separate treatment of $\tau$-bench's retail and airline domains is itself a sub-task-level analysis of one benchmark family, and it revealed substantial within-family divergence; comparable decompositions of the other benchmarks require item-level data that is not currently published. Fourth, published scores are produced under heterogeneous evaluation protocols (e.g., reasoning-effort settings, extended-thinking modes, user-simulator models, scaffolds); we use each provider's standard single-attempt configuration where multiple figures exist, but residual protocol variance cannot be fully eliminated. Finally, our benchmark selection does not cover every major benchmark: GAIA, WebArena, OSWorld, and BFCL were excluded because, at data collection, too few of our 15 models had published scores on them under comparable configurations to support pairwise analysis. Whether the two-cluster structure persists when these benchmarks are added is an open empirical question; our released analysis code makes this straightforward to test as coverage grows.
 
 {\sloppy
-\textit{Reproducibility.} All benchmark scores used in this analysis are drawn from publicly available leaderboards (llm\hyp{}stats.com, swebench.com) and official model cards, as recorded in May--June 2026 and re-verified against primary sources in July 2026. We release the complete cross-benchmark score matrix (Table~\ref{tab:scores}), correlation analysis code, and figure generation scripts.\footnote{\url{https://github.com/H-Sompalle/construct-validity}} We note that leaderboard scores are updated continuously as providers re-evaluate models; our analysis represents a snapshot, and we encourage replication on updated data. The pairwise-complete analysis methodology is robust to the addition of new models: adding a model requires only that it has been evaluated on at least two benchmarks.\par}
+\textit{Reproducibility.} All benchmark scores used in this analysis are drawn from publicly available leaderboards (llm-stats.com, swebench.com) and official model cards, as recorded in May--June 2026 and re-verified against primary sources in July 2026. We release the complete cross-benchmark score matrix (Table~\ref{tab:scores}), correlation analysis code, and figure generation scripts.\footnote{Anonymized reproduction repository URL omitted for review; code and score matrix will be released upon acceptance.} We note that leaderboard scores are updated continuously as providers re-evaluate models; our analysis represents a snapshot, and we encourage replication on updated data. The pairwise-complete analysis methodology is robust to the addition of new models: adding a model requires only that it has been evaluated on at least two benchmarks.\par}
 
 \section{Conclusion}
 We have shown that, across five widely used benchmarks and 15 models, published scores do not induce a stable cross-benchmark model ranking. Cross-benchmark correlations are moderate (mean $\rho = 0.67$), ranking inversions affect 22\% of model pairs, and reasoning-specialized models exhibit dramatic rank drops on tool-use benchmarks. These results are inconsistent with a single latent ``agent ability'' factor underlying the selected benchmarks; a multi-factor structure of at least two positively correlated capability factors is the most natural explanation, though confirming it---and generalizing it beyond our benchmark and model sample---will require item-level data and broader coverage. Even under this appropriately cautious reading, the practical implications stand: aggregate leaderboards built from these scores are misleading, model selection should be benchmark-specific, and the community urgently needs construct-valid evaluation standards.
@@ -329,7 +300,5 @@ Looking forward, we see three priority actions. First, benchmark designers shoul
 
 As agent benchmarks increasingly shape research priorities, procurement decisions, and public perception of AI progress, psychometric rigor is not optional. It is a prerequisite for trustworthy evaluation.
 
-\bibliographystyle{ACM-Reference-Format}
-\bibliography{refs}
-
+\bibliography{custom}
 \end{document}

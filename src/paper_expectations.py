@@ -111,7 +111,7 @@ TABLE_3_SCORES: dict[str, dict[str, float | None]] = {
     },
 }
 
-# Table 5: per-benchmark ranks (1 = best) and spread for highlighted models.
+# Table 5 (raw ranks, 1 = best) — still used for §4.3 prose claims.
 TABLE_5_RANKS: dict[str, dict[str, int | None]] = {
     "o3-mini": {
         "tau_retail": 12,
@@ -163,19 +163,77 @@ TABLE_5_RANKS: dict[str, dict[str, int | None]] = {
     },
 }
 
-# Figure 1 / §4.1: Spearman ρ (rounded to 2 decimals in paper), n, and cited p-values.
-# p_* keys are optional significance checks where the paper states them explicitly.
+# Table 5 (percentile-normalized): 0 = best, 100 = worst; spread = max − min.
+# Values are round(100 * (rank − 1) / (n − 1)).
+TABLE_5_PERCENTILES: dict[str, dict[str, int | None]] = {
+    "o4-mini": {
+        "tau_retail": 36,
+        "tau_airline": 89,
+        "swe_bench": 25,
+        "gpqa": 8,
+        "mmlu_pro": 10,
+        "percentile_spread": 81,
+    },
+    "o1": {
+        "tau_retail": 43,
+        "tau_airline": 67,
+        "swe_bench": 67,
+        "gpqa": 25,
+        "mmlu_pro": 0,
+        "percentile_spread": 67,
+    },
+    "o3-mini": {
+        "tau_retail": 79,
+        "tau_airline": None,
+        "swe_bench": 50,
+        "gpqa": 33,
+        "mmlu_pro": 20,
+        "percentile_spread": 59,
+    },
+    "GPT-4.5": {
+        "tau_retail": 57,
+        "tau_airline": 56,
+        "swe_bench": 83,
+        "gpqa": 50,
+        "mmlu_pro": 50,
+        "percentile_spread": 33,
+    },
+    "Claude Opus 4": {
+        "tau_retail": 14,
+        "tau_airline": 22,
+        "swe_bench": 17,
+        "gpqa": 17,
+        "mmlu_pro": None,
+        "percentile_spread": 8,
+    },
+    "Claude Sonnet 4.5": {
+        "tau_retail": 0,
+        "tau_airline": 0,
+        "swe_bench": 0,
+        "gpqa": 0,
+        "mmlu_pro": None,
+        "percentile_spread": 0,
+    },
+}
+
+# Figure 1 / §4.1: Spearman ρ (rounded to 2 decimals in paper), n, p-values, bootstrap CIs.
+# p_* / ci_* keys are optional checks where the paper states them explicitly.
 CORRELATIONS: dict[tuple[str, str], dict] = {
-    ("tau_retail", "tau_airline"): {"rho": 0.75, "n": 10},
-    ("tau_retail", "swe_bench"): {"rho": 0.81, "n": 13},
-    ("tau_retail", "gpqa"): {"rho": 0.76, "n": 13},
-    ("tau_retail", "mmlu_pro"): {"rho": 0.80, "n": 11},
-    ("tau_airline", "swe_bench"): {"rho": 0.66, "n": 9},
-    ("tau_airline", "gpqa"): {"rho": 0.49, "n": 9, "p_gt_005": True},
-    ("tau_airline", "mmlu_pro"): {"rho": 0.10, "n": 6, "p_round_2": 0.85},
-    ("swe_bench", "gpqa"): {"rho": 0.72, "n": 13},
-    ("swe_bench", "mmlu_pro"): {"rho": 0.69, "n": 10},
-    ("gpqa", "mmlu_pro"): {"rho": 0.92, "n": 10, "p_lt_001": True},
+    ("tau_retail", "tau_airline"): {"rho": 0.75, "n": 10, "ci": (0.23, 0.95)},
+    ("tau_retail", "swe_bench"): {"rho": 0.81, "n": 13, "ci": (0.44, 0.95)},
+    ("tau_retail", "gpqa"): {"rho": 0.76, "n": 13, "ci": (0.27, 0.98)},
+    ("tau_retail", "mmlu_pro"): {"rho": 0.80, "n": 11, "ci": (0.29, 0.99)},
+    ("tau_airline", "swe_bench"): {"rho": 0.66, "n": 9, "ci": (-0.19, 1.00)},
+    ("tau_airline", "gpqa"): {"rho": 0.49, "n": 9, "p_gt_005": True, "ci": (-0.41, 0.95)},
+    ("tau_airline", "mmlu_pro"): {
+        "rho": 0.10,
+        "n": 6,
+        "p_round_2": 0.85,
+        "ci": (-0.87, 0.95),
+    },
+    ("swe_bench", "gpqa"): {"rho": 0.72, "n": 13, "ci": (0.26, 0.93)},
+    ("swe_bench", "mmlu_pro"): {"rho": 0.69, "n": 10, "ci": (0.07, 0.98)},
+    ("gpqa", "mmlu_pro"): {"rho": 0.92, "n": 10, "p_lt_001": True, "ci": (0.65, 1.00)},
 }
 
 SUMMARY_STATS = {

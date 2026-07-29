@@ -11,6 +11,9 @@ from scipy import stats
 
 from .data import AGENT_BENCHMARKS, BENCHMARK_COLUMNS, BENCHMARK_LABELS, load_scores
 
+DEFAULT_BOOTSTRAP_RESAMPLES = 10_000
+DEFAULT_BOOTSTRAP_SEED = 42
+
 
 class CorrelationResult(NamedTuple):
     benchmark_a: str
@@ -18,6 +21,8 @@ class CorrelationResult(NamedTuple):
     rho: float
     p_value: float
     n: int
+    ci_low: float
+    ci_high: float
 
 
 class InversionResult(NamedTuple):
@@ -32,19 +37,59 @@ class RankSpreadResult(NamedTuple):
     model: str
     ranks: dict[str, int]
     spread: int
+    percentile_ranks: dict[str, float]
+    percentile_spread: float
 
 
-def pairwise_spearman(scores: pd.DataFrame) -> list[CorrelationResult]:
-    """Spearman rank correlations on pairwise-complete observations."""
+def _bootstrap_spearman_ci(
+    x: np.ndarray,
+    y: np.ndarray,
+    n_resamples: int = DEFAULT_BOOTSTRAP_RESAMPLES,
+    seed: int = DEFAULT_BOOTSTRAP_SEED,
+    alpha: float = 0.05,
+) -> tuple[float, float]:
+    """Percentile bootstrap CI for Spearman ρ (pairwise-complete vectors)."""
+    n = len(x)
+    if n < 2:
+        return float("nan"), float("nan")
+    rng = np.random.default_rng(seed)
+    boots = np.empty(n_resamples, dtype=float)
+    for i in range(n_resamples):
+        idx = rng.integers(0, n, size=n)
+        xb, yb = x[idx], y[idx]
+        # Constant resamples yield undefined Spearman ρ; skip them.
+        if np.unique(xb).size < 2 or np.unique(yb).size < 2:
+            boots[i] = np.nan
+            continue
+        rho, _ = stats.spearmanr(xb, yb)
+        boots[i] = rho if np.isfinite(rho) else np.nan
+    boots = boots[np.isfinite(boots)]
+    if boots.size == 0:
+        return float("nan"), float("nan")
+    lo, hi = np.percentile(boots, [100 * alpha / 2, 100 * (1 - alpha / 2)])
+    return float(lo), float(hi)
+
+
+def pairwise_spearman(
+    scores: pd.DataFrame,
+    n_resamples: int = DEFAULT_BOOTSTRAP_RESAMPLES,
+    seed: int = DEFAULT_BOOTSTRAP_SEED,
+) -> list[CorrelationResult]:
+    """Spearman rank correlations on pairwise-complete observations with bootstrap CIs."""
     results: list[CorrelationResult] = []
     for a, b in combinations(BENCHMARK_COLUMNS, 2):
         pair = scores[[a, b]].dropna()
         n = len(pair)
         if n < 2:
-            rho, p = np.nan, np.nan
+            rho, p, lo, hi = np.nan, np.nan, np.nan, np.nan
         else:
-            rho, p = stats.spearmanr(pair[a], pair[b])
-        results.append(CorrelationResult(a, b, float(rho), float(p), n))
+            x = pair[a].to_numpy()
+            y = pair[b].to_numpy()
+            rho, p = stats.spearmanr(x, y)
+            lo, hi = _bootstrap_spearman_ci(x, y, n_resamples=n_resamples, seed=seed)
+        results.append(
+            CorrelationResult(a, b, float(rho), float(p), n, float(lo), float(hi))
+        )
     return results
 
 
@@ -120,18 +165,40 @@ def compute_ranks(scores: pd.DataFrame) -> pd.DataFrame:
     return ranks
 
 
-def rank_spreads(scores: pd.DataFrame, min_benchmarks: int = 4) -> list[RankSpreadResult]:
-    """Rank spread (max rank − min rank) for models scored on ≥ min_benchmarks."""
+def compute_percentile_ranks(scores: pd.DataFrame) -> pd.DataFrame:
+    """Percentile ranks in [0, 1]: 0 = best, 1 = worst, via (rank − 1) / (n − 1).
+
+    Normalizes for unequal field sizes (e.g. τ-Airline n=10 vs τ-Retail n=15).
+    """
     ranks = compute_ranks(scores)
+    pct = ranks.copy()
+    for col in BENCHMARK_COLUMNS:
+        n = int(scores[col].notna().sum())
+        if n <= 1:
+            pct[col] = np.nan
+        else:
+            pct[col] = (ranks[col] - 1) / (n - 1)
+    return pct
+
+
+def rank_spreads(scores: pd.DataFrame, min_benchmarks: int = 4) -> list[RankSpreadResult]:
+    """Rank and percentile-rank spreads for models scored on ≥ min_benchmarks."""
+    ranks = compute_ranks(scores)
+    pct = compute_percentile_ranks(scores)
     results: list[RankSpreadResult] = []
     for model in scores.index:
         model_ranks = ranks.loc[model].dropna()
         if len(model_ranks) < min_benchmarks:
             continue
+        model_pct = pct.loc[model, model_ranks.index]
         rank_dict = {col: int(model_ranks[col]) for col in model_ranks.index}
+        pct_dict = {col: float(model_pct[col]) for col in model_ranks.index}
         spread = int(model_ranks.max() - model_ranks.min())
-        results.append(RankSpreadResult(model, rank_dict, spread))
-    results.sort(key=lambda r: r.spread, reverse=True)
+        pct_spread = float(model_pct.max() - model_pct.min())
+        results.append(
+            RankSpreadResult(model, rank_dict, spread, pct_dict, pct_spread)
+        )
+    results.sort(key=lambda r: r.percentile_spread, reverse=True)
     return results
 
 
@@ -143,6 +210,8 @@ def format_correlation_table(results: list[CorrelationResult]) -> pd.DataFrame:
                 "benchmark_a": BENCHMARK_LABELS[r.benchmark_a],
                 "benchmark_b": BENCHMARK_LABELS[r.benchmark_b],
                 "rho": round(r.rho, 2),
+                "ci_low": round(r.ci_low, 2),
+                "ci_high": round(r.ci_high, 2),
                 "p_value": r.p_value,
                 "n": r.n,
                 "bonferroni_significant": r.p_value < 0.005,
@@ -177,11 +246,30 @@ def format_inversion_table(results: list[InversionResult]) -> pd.DataFrame:
 
 
 def format_rank_spread_table(results: list[RankSpreadResult]) -> pd.DataFrame:
+    """Raw ranks and raw spread (legacy Table 5 layout)."""
     rows = []
     for r in results:
         row = {"model": r.model, "spread": r.spread}
         for col in BENCHMARK_COLUMNS:
             row[BENCHMARK_LABELS[col]] = r.ranks.get(col, "")
+        rows.append(row)
+    return pd.DataFrame(rows)
+
+
+def format_percentile_spread_table(results: list[RankSpreadResult]) -> pd.DataFrame:
+    """Percentile ranks (0--100, 0 = best) and percentile spread."""
+    rows = []
+    for r in results:
+        row = {
+            "model": r.model,
+            "percentile_spread": round(100 * r.percentile_spread),
+            "raw_spread": r.spread,
+        }
+        for col in BENCHMARK_COLUMNS:
+            if col in r.percentile_ranks:
+                row[BENCHMARK_LABELS[col]] = round(100 * r.percentile_ranks[col])
+            else:
+                row[BENCHMARK_LABELS[col]] = ""
         rows.append(row)
     return pd.DataFrame(rows)
 
@@ -201,6 +289,8 @@ def run_all_analyses(scores: pd.DataFrame | None = None) -> dict:
         "inversions": inv_results,
         "inversion_table": format_inversion_table(inv_results),
         "ranks": compute_ranks(scores),
+        "percentile_ranks": compute_percentile_ranks(scores),
         "rank_spreads": spread_results,
         "rank_spread_table": format_rank_spread_table(spread_results),
+        "percentile_spread_table": format_percentile_spread_table(spread_results),
     }

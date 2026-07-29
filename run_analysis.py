@@ -6,9 +6,8 @@ from __future__ import annotations
 import argparse
 from pathlib import Path
 
-import pandas as pd
-
 from src.analyze import run_all_analyses
+from src.data import BENCHMARK_LABELS
 from src.figures import generate_all_figures
 
 
@@ -35,9 +34,18 @@ def main() -> None:
     results["correlation_table"].to_csv(tables_dir / "correlations.csv", index=False)
     results["inversion_table"].to_csv(tables_dir / "inversion_rates.csv", index=False)
     results["rank_spread_table"].to_csv(tables_dir / "rank_spreads.csv", index=False)
+    results["percentile_spread_table"].to_csv(
+        tables_dir / "percentile_rank_spreads.csv", index=False
+    )
     results["ranks"].to_csv(tables_dir / "model_ranks.csv")
+    results["percentile_ranks"].to_csv(tables_dir / "model_percentile_ranks.csv")
 
     cd = results["convergent_discriminant"]
+    corr_ci_lines = [
+        f"  {BENCHMARK_LABELS[r.benchmark_a]} × {BENCHMARK_LABELS[r.benchmark_b]}: "
+        f"ρ={r.rho:.2f} [{r.ci_low:.2f}, {r.ci_high:.2f}] (n={r.n}, p={r.p_value:.4f})"
+        for r in results["correlations"]
+    ]
     summary_lines = [
         "Construct Validity Audit — Summary Statistics",
         "=" * 48,
@@ -46,19 +54,27 @@ def main() -> None:
         f"Mean cross-domain ρ:                {cd['mean_cross_domain']:.2f}",
         f"Mean inversion rate:                 {results['inversion_table'].iloc[-1]['rate_pct']:.1f}%",
         "",
+        "Pairwise Spearman ρ with bootstrap 95% CIs (10,000 resamples):",
+        *corr_ci_lines,
+        "",
         "Correlation matrix:",
         results["correlation_matrix"].round(2).to_string(),
         "",
         "Ranking inversions:",
         results["inversion_table"].to_string(index=False),
         "",
-        "Rank spreads (models with ≥4 benchmarks):",
+        "Percentile rank spreads (0=best, 100=worst; models with ≥4 benchmarks):",
+        results["percentile_spread_table"].to_string(index=False),
+        "",
+        "Raw rank spreads (legacy):",
         results["rank_spread_table"].to_string(index=False),
     ]
     summary_path = output_dir / "summary.txt"
     summary_path.write_text("\n".join(summary_lines) + "\n")
 
-    figure_paths = generate_all_figures(figures_dir, results["scores"])
+    figure_paths = generate_all_figures(
+        figures_dir, results["scores"], correlations=results["correlations"]
+    )
 
     print(f"Wrote tables to {tables_dir}")
     print(f"Wrote summary to {summary_path}")

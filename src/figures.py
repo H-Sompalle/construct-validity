@@ -39,19 +39,30 @@ def _rho_for_pair(scores: pd.DataFrame, a: str, b: str) -> float:
     return float(rho)
 
 
-def figure1_correlation_heatmap(scores: pd.DataFrame, output: Path) -> None:
-    """Figure 1: cross-benchmark Spearman correlation heatmap."""
+def figure1_correlation_heatmap(
+    scores: pd.DataFrame,
+    output: Path,
+    correlations: list | None = None,
+) -> None:
+    """Figure 1: cross-benchmark Spearman correlation heatmap with bootstrap CIs."""
+    from .analyze import pairwise_spearman
+
     labels = [BENCHMARK_LABELS[c] for c in BENCHMARK_COLUMNS]
     mat = np.eye(len(BENCHMARK_COLUMNS))
+    ci = {(i, i): None for i in range(len(BENCHMARK_COLUMNS))}
+    if correlations is None:
+        correlations = pairwise_spearman(scores)
+    corr_by_pair = {(r.benchmark_a, r.benchmark_b): r for r in correlations}
     for i, a in enumerate(BENCHMARK_COLUMNS):
         for j, b in enumerate(BENCHMARK_COLUMNS):
             if i < j:
-                pair = scores[[a, b]].dropna()
-                rho, _ = stats.spearmanr(pair[a], pair[b])
-                mat[i, j] = rho
-                mat[j, i] = rho
+                r = corr_by_pair[(a, b)]
+                mat[i, j] = r.rho
+                mat[j, i] = r.rho
+                ci[(i, j)] = (r.ci_low, r.ci_high)
+                ci[(j, i)] = (r.ci_low, r.ci_high)
 
-    fig, ax = plt.subplots(figsize=(7, 6))
+    fig, ax = plt.subplots(figsize=(7.5, 6.5))
     im = ax.imshow(mat, vmin=0, vmax=1, cmap="Blues")
     ax.set_xticks(range(len(labels)))
     ax.set_yticks(range(len(labels)))
@@ -59,12 +70,27 @@ def figure1_correlation_heatmap(scores: pd.DataFrame, output: Path) -> None:
     ax.set_yticklabels(labels)
     for i in range(len(labels)):
         for j in range(len(labels)):
-            ax.text(j, i, f"{mat[i, j]:.2f}", ha="center", va="center", color="black", fontsize=10)
-    ax.set_title("Cross-Benchmark Rank Correlations")
+            if i == j:
+                ax.text(j, i, f"{mat[i, j]:.2f}", ha="center", va="center", color="black", fontsize=9)
+            else:
+                lo, hi = ci[(i, j)]
+                ax.text(
+                    j,
+                    i,
+                    f"{mat[i, j]:.2f}\n[{lo:.2f}, {hi:.2f}]",
+                    ha="center",
+                    va="center",
+                    color="black",
+                    fontsize=7,
+                    linespacing=1.15,
+                )
+    ax.set_title("Cross-Benchmark Rank Correlations\n(Spearman ρ with bootstrap 95% CIs)")
     cbar = fig.colorbar(im, ax=ax, fraction=0.046, pad=0.04)
     cbar.set_label("Spearman ρ")
     fig.tight_layout()
     fig.savefig(output, dpi=200, bbox_inches="tight")
+    if output.suffix.lower() != ".pdf":
+        fig.savefig(output.with_suffix(".pdf"), bbox_inches="tight")
     plt.close(fig)
 
 
@@ -143,7 +169,11 @@ def figure3_rank_profiles(scores: pd.DataFrame, output: Path) -> None:
     plt.close(fig)
 
 
-def generate_all_figures(output_dir: Path | str | None = None, scores: pd.DataFrame | None = None) -> dict[str, Path]:
+def generate_all_figures(
+    output_dir: Path | str | None = None,
+    scores: pd.DataFrame | None = None,
+    correlations: list | None = None,
+) -> dict[str, Path]:
     if scores is None:
         scores = load_scores()
     if output_dir is None:
@@ -153,10 +183,11 @@ def generate_all_figures(output_dir: Path | str | None = None, scores: pd.DataFr
 
     paths = {
         "figure1": output_dir / "figure1_correlation_heatmap.png",
+        "figure1_pdf": output_dir / "figure1_correlation_heatmap.pdf",
         "figure2": output_dir / "figure2_score_relationships.png",
         "figure3": output_dir / "figure3_rank_profiles.png",
     }
-    figure1_correlation_heatmap(scores, paths["figure1"])
+    figure1_correlation_heatmap(scores, paths["figure1"], correlations=correlations)
     figure2_score_relationships(scores, paths["figure2"])
     figure3_rank_profiles(scores, paths["figure3"])
     return paths

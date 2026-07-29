@@ -14,6 +14,7 @@ from src.paper_expectations import (
     PROSE_CLAIMS,
     SUMMARY_STATS,
     TABLE_3_SCORES,
+    TABLE_5_PERCENTILES,
     TABLE_5_RANKS,
 )
 
@@ -46,14 +47,43 @@ def verify_table_5(ranks, spread_results, failures: list[str]) -> int:
             actual_rank = ranks.loc[model, col]
             if expected_rank is None:
                 if actual_rank == actual_rank:
-                    _fail(failures, f"Table 5 {model}/{col}: expected missing rank, got {int(actual_rank)}")
+                    _fail(failures, f"Table 5 raw {model}/{col}: expected missing rank, got {int(actual_rank)}")
             elif int(actual_rank) != expected_rank:
-                _fail(failures, f"Table 5 {model}/{col}: expected rank {expected_rank}, got {int(actual_rank)}")
+                _fail(failures, f"Table 5 raw {model}/{col}: expected rank {expected_rank}, got {int(actual_rank)}")
         count += 1
         expected_spread = expected["spread"]
         actual_spread = spreads[model].spread
         if actual_spread != expected_spread:
-            _fail(failures, f"Table 5 {model} spread: expected {expected_spread}, got {actual_spread}")
+            _fail(failures, f"Table 5 raw {model} spread: expected {expected_spread}, got {actual_spread}")
+    return count
+
+
+def verify_table_5_percentiles(spread_results, failures: list[str]) -> int:
+    count = 0
+    spreads = {r.model: r for r in spread_results}
+    for model, expected in TABLE_5_PERCENTILES.items():
+        r = spreads[model]
+        for col in BENCHMARK_COLUMNS:
+            count += 1
+            expected_pct = expected[col]
+            actual = r.percentile_ranks.get(col)
+            if expected_pct is None:
+                if actual is not None:
+                    _fail(failures, f"Table 5 pct {model}/{col}: expected missing, got {actual}")
+            else:
+                actual_pct = round(100 * actual)
+                if actual_pct != expected_pct:
+                    _fail(
+                        failures,
+                        f"Table 5 pct {model}/{col}: expected {expected_pct}, got {actual_pct}",
+                    )
+        count += 1
+        actual_spread = round(100 * r.percentile_spread)
+        if actual_spread != expected["percentile_spread"]:
+            _fail(
+                failures,
+                f"Table 5 pct {model} spread: expected {expected['percentile_spread']}, got {actual_spread}",
+            )
     return count
 
 
@@ -80,6 +110,13 @@ def verify_correlations(corr_results, failures: list[str]) -> int:
             count += 1
             if round(r.p_value, 2) != expected["p_round_2"]:
                 _fail(failures, f"p{pair}: expected ~{expected['p_round_2']}, got {r.p_value:.4f}")
+        if "ci" in expected:
+            count += 2
+            exp_lo, exp_hi = expected["ci"]
+            if round(r.ci_low, 2) != exp_lo:
+                _fail(failures, f"CI lo{pair}: expected {exp_lo}, got {r.ci_low:.4f}")
+            if round(r.ci_high, 2) != exp_hi:
+                _fail(failures, f"CI hi{pair}: expected {exp_hi}, got {r.ci_high:.4f}")
     return count
 
 
@@ -206,8 +243,11 @@ def main() -> int:
     sections: list[tuple[str, int]] = []
 
     sections.append(("Table 3 scores (75 cells)", verify_table_3(scores, failures)))
-    sections.append(("Table 5 ranks & spreads", verify_table_5(ranks, spreads, failures)))
-    sections.append(("Correlations (ρ, n, p)", verify_correlations(results["correlations"], failures)))
+    sections.append(("Table 5 raw ranks & spreads", verify_table_5(ranks, spreads, failures)))
+    sections.append(
+        ("Table 5 percentile ranks & spreads", verify_table_5_percentiles(spreads, failures))
+    )
+    sections.append(("Correlations (ρ, n, p, CI)", verify_correlations(results["correlations"], failures)))
     sections.append(("Table 4 inversions", verify_inversions(results["inversions"], failures)))
     sections.append(("Summary statistics", verify_summary(results, failures)))
     sections.append(("Coverage (§3)", verify_coverage(scores, failures)))
