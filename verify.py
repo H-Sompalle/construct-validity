@@ -1,4 +1,4 @@
-"""Verify all paper statistics against independently transcribed expectations."""
+"""Verify analysis outputs against independently transcribed expectations."""
 
 from __future__ import annotations
 
@@ -6,16 +6,16 @@ import sys
 
 from src.analyze import compute_ranks, rank_spreads, run_all_analyses
 from src.data import BENCHMARK_COLUMNS, load_scores
-from src.paper_expectations import (
+from src.expectations import (
     CORRELATIONS,
     COVERAGE,
     DERIVED,
+    EXPECTED_PERCENTILES,
+    EXPECTED_RANKS,
+    EXPECTED_SCORES,
     INVERSIONS,
     PROSE_CLAIMS,
     SUMMARY_STATS,
-    TABLE_3_SCORES,
-    TABLE_5_PERCENTILES,
-    TABLE_5_RANKS,
 )
 
 
@@ -23,45 +23,45 @@ def _fail(failures: list[str], msg: str) -> None:
     failures.append(msg)
 
 
-def verify_table_3(scores, failures: list[str]) -> int:
+def verify_scores(scores, failures: list[str]) -> int:
     count = 0
-    for model, expected_cols in TABLE_3_SCORES.items():
+    for model, expected_cols in EXPECTED_SCORES.items():
         for col, expected in expected_cols.items():
             count += 1
             actual = scores.loc[model, col]
             if expected is None:
                 if not (actual != actual):  # NaN check
-                    _fail(failures, f"Table 3 {model}/{col}: expected missing, got {actual}")
+                    _fail(failures, f"score {model}/{col}: expected missing, got {actual}")
             elif actual != expected:
-                _fail(failures, f"Table 3 {model}/{col}: expected {expected}, got {actual}")
+                _fail(failures, f"score {model}/{col}: expected {expected}, got {actual}")
     return count
 
 
-def verify_table_5(ranks, spread_results, failures: list[str]) -> int:
+def verify_ranks(ranks, spread_results, failures: list[str]) -> int:
     count = 0
     spreads = {r.model: r for r in spread_results}
-    for model, expected in TABLE_5_RANKS.items():
+    for model, expected in EXPECTED_RANKS.items():
         for col in BENCHMARK_COLUMNS:
             count += 1
             expected_rank = expected[col]
             actual_rank = ranks.loc[model, col]
             if expected_rank is None:
                 if actual_rank == actual_rank:
-                    _fail(failures, f"Table 5 raw {model}/{col}: expected missing rank, got {int(actual_rank)}")
+                    _fail(failures, f"rank {model}/{col}: expected missing rank, got {int(actual_rank)}")
             elif int(actual_rank) != expected_rank:
-                _fail(failures, f"Table 5 raw {model}/{col}: expected rank {expected_rank}, got {int(actual_rank)}")
+                _fail(failures, f"rank {model}/{col}: expected rank {expected_rank}, got {int(actual_rank)}")
         count += 1
         expected_spread = expected["spread"]
         actual_spread = spreads[model].spread
         if actual_spread != expected_spread:
-            _fail(failures, f"Table 5 raw {model} spread: expected {expected_spread}, got {actual_spread}")
+            _fail(failures, f"rank {model} spread: expected {expected_spread}, got {actual_spread}")
     return count
 
 
-def verify_table_5_percentiles(spread_results, failures: list[str]) -> int:
+def verify_percentiles(spread_results, failures: list[str]) -> int:
     count = 0
     spreads = {r.model: r for r in spread_results}
-    for model, expected in TABLE_5_PERCENTILES.items():
+    for model, expected in EXPECTED_PERCENTILES.items():
         r = spreads[model]
         for col in BENCHMARK_COLUMNS:
             count += 1
@@ -69,20 +69,20 @@ def verify_table_5_percentiles(spread_results, failures: list[str]) -> int:
             actual = r.percentile_ranks.get(col)
             if expected_pct is None:
                 if actual is not None:
-                    _fail(failures, f"Table 5 pct {model}/{col}: expected missing, got {actual}")
+                    _fail(failures, f"percentile {model}/{col}: expected missing, got {actual}")
             else:
                 actual_pct = round(100 * actual)
                 if actual_pct != expected_pct:
                     _fail(
                         failures,
-                        f"Table 5 pct {model}/{col}: expected {expected_pct}, got {actual_pct}",
+                        f"percentile {model}/{col}: expected {expected_pct}, got {actual_pct}",
                     )
         count += 1
         actual_spread = round(100 * r.percentile_spread)
         if actual_spread != expected["percentile_spread"]:
             _fail(
                 failures,
-                f"Table 5 pct {model} spread: expected {expected['percentile_spread']}, got {actual_spread}",
+                f"percentile {model} spread: expected {expected['percentile_spread']}, got {actual_spread}",
             )
     return count
 
@@ -150,7 +150,7 @@ def verify_summary(results, failures: list[str]) -> int:
             SUMMARY_STATS["mean_inversion_rate_pct"],
         ),
         (
-            "abstract inversion rate (rounded)",
+            "headline inversion rate (rounded)",
             round(results["inversion_table"].iloc[-1]["rate_pct"]),
             SUMMARY_STATS["abstract_inversion_rate_pct_rounded"],
         ),
@@ -175,9 +175,9 @@ def verify_coverage(scores, failures: list[str]) -> int:
     return count
 
 
-def verify_prose(ranks, scores, failures: list[str]) -> int:
+def verify_claims(ranks, scores, failures: list[str]) -> int:
     count = 0
-    prose_checks = [
+    claim_checks = [
         ("o4-mini GPQA rank", int(ranks.loc["o4-mini", "gpqa"]), PROSE_CLAIMS["o4-mini_gpqa_rank"]),
         ("o4-mini MMLU rank", int(ranks.loc["o4-mini", "mmlu_pro"]), PROSE_CLAIMS["o4-mini_mmlu_rank"]),
         ("o4-mini τ-Retail rank", int(ranks.loc["o4-mini", "tau_retail"]), PROSE_CLAIMS["o4-mini_tau_retail_rank"]),
@@ -201,26 +201,26 @@ def verify_prose(ranks, scores, failures: list[str]) -> int:
             PROSE_CLAIMS["claude_opus_41_tau_airline_rank"],
         ),
     ]
-    for label, actual, expected in prose_checks:
+    for label, actual, expected in claim_checks:
         count += 1
         if actual != expected:
-            _fail(failures, f"§4 prose {label}: expected {expected}, got {actual}")
+            _fail(failures, f"claim {label}: expected {expected}, got {actual}")
 
     count += 1
     cs45_ranks = ranks.loc["Claude Sonnet 4.5", BENCHMARK_COLUMNS].dropna().astype(int)
     if not all(r == PROSE_CLAIMS["claude_sonnet_45_all_ranks"] for r in cs45_ranks):
-        _fail(failures, f"§4 prose Claude Sonnet 4.5 all ranks 1: got {dict(cs45_ranks)}")
+        _fail(failures, f"claim Claude Sonnet 4.5 all ranks 1: got {dict(cs45_ranks)}")
 
     count += 2
     if not (scores.loc["GPT-4.5", "tau_retail"] > scores.loc["o3-mini", "tau_retail"]):
-        _fail(failures, "§4.2 GPT-4.5 should beat o3-mini on τ-Retail")
+        _fail(failures, "claim GPT-4.5 should beat o3-mini on τ-Retail")
     if not (scores.loc["GPT-4.5", "swe_bench"] < scores.loc["o3-mini", "swe_bench"]):
-        _fail(failures, "§4.2 GPT-4.5 should lose to o3-mini on SWE-bench")
+        _fail(failures, "claim GPT-4.5 should lose to o3-mini on SWE-bench")
     count += 2
     if not (scores.loc["GPT-4.1", "tau_airline"] > scores.loc["o4-mini", "tau_airline"]):
-        _fail(failures, "§4.2 GPT-4.1 should beat o4-mini on τ-Airline")
+        _fail(failures, "claim GPT-4.1 should beat o4-mini on τ-Airline")
     if not (scores.loc["GPT-4.1", "swe_bench"] < scores.loc["o4-mini", "swe_bench"]):
-        _fail(failures, "§4.2 GPT-4.1 should lose to o4-mini on SWE-bench")
+        _fail(failures, "claim GPT-4.1 should lose to o4-mini on SWE-bench")
 
     return count
 
@@ -230,7 +230,7 @@ def verify_derived(failures: list[str]) -> int:
     actual = round(1 - 0.75**2, 2)
     expected = DERIVED["tau_retail_tau_airline_unexplained_variance"]
     if actual != expected:
-        _fail(failures, f"§5 D2 unexplained variance: expected {expected}, got {actual}")
+        _fail(failures, f"unexplained variance: expected {expected}, got {actual}")
     return count
 
 
@@ -242,17 +242,15 @@ def main() -> int:
     failures: list[str] = []
     sections: list[tuple[str, int]] = []
 
-    sections.append(("Table 3 scores (75 cells)", verify_table_3(scores, failures)))
-    sections.append(("Table 5 raw ranks & spreads", verify_table_5(ranks, spreads, failures)))
-    sections.append(
-        ("Table 5 percentile ranks & spreads", verify_table_5_percentiles(spreads, failures))
-    )
+    sections.append(("Scores (75 cells)", verify_scores(scores, failures)))
+    sections.append(("Raw ranks & spreads", verify_ranks(ranks, spreads, failures)))
+    sections.append(("Percentile ranks & spreads", verify_percentiles(spreads, failures)))
     sections.append(("Correlations (ρ, n, p, CI)", verify_correlations(results["correlations"], failures)))
-    sections.append(("Table 4 inversions", verify_inversions(results["inversions"], failures)))
+    sections.append(("Inversions", verify_inversions(results["inversions"], failures)))
     sections.append(("Summary statistics", verify_summary(results, failures)))
-    sections.append(("Coverage (§3)", verify_coverage(scores, failures)))
-    sections.append(("Prose claims (§4.2–§4.3)", verify_prose(ranks, scores, failures)))
-    sections.append(("Derived values (§5)", verify_derived(failures)))
+    sections.append(("Coverage", verify_coverage(scores, failures)))
+    sections.append(("Narrative claims", verify_claims(ranks, scores, failures)))
+    sections.append(("Derived values", verify_derived(failures)))
 
     total = sum(n for _, n in sections)
     print(f"Ran {total} checks across {len(sections)} sections:\n")

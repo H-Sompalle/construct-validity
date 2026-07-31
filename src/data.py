@@ -1,4 +1,4 @@
-"""Load and label the cross-benchmark score matrix (Table 3)."""
+"""Load and label the cross-benchmark score matrix."""
 
 from __future__ import annotations
 

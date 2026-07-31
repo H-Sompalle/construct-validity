@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Run construct validity analyses and regenerate paper tables/figures."""
+"""Run construct validity analyses and regenerate tables/figures."""
 
 from __future__ import annotations
 
@@ -13,7 +13,7 @@ from src.figures import generate_all_figures
 
 def main() -> None:
     parser = argparse.ArgumentParser(
-        description="Reproduce results from 'Construct Validity Failures in Agentic AI Benchmarks'."
+        description="Run construct validity analyses across agentic AI benchmarks."
     )
     parser.add_argument(
         "--output-dir",

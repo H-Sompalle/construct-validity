@@ -1,4 +1,4 @@
-"""Construct validity analyses from the KDD workshop paper."""
+"""Construct validity analyses for agentic AI benchmarks."""
 
 from __future__ import annotations
 
@@ -246,7 +246,7 @@ def format_inversion_table(results: list[InversionResult]) -> pd.DataFrame:
 
 
 def format_rank_spread_table(results: list[RankSpreadResult]) -> pd.DataFrame:
-    """Raw ranks and raw spread (legacy Table 5 layout)."""
+    """Raw ranks and raw spread (legacy layout)."""
     rows = []
     for r in results:
         row = {"model": r.model, "spread": r.spread}

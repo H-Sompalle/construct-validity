@@ -1,9 +1,9 @@
-"""Expected values transcribed from the camera-ready paper (Tables 3–5, §4.1)."""
+"""Expected values for automated verification of analysis outputs."""
 
 from __future__ import annotations
 
-# Table 3: cross-benchmark scores. None = dash (no published score).
-TABLE_3_SCORES: dict[str, dict[str, float | None]] = {
+# Cross-benchmark scores. None = no published score.
+EXPECTED_SCORES: dict[str, dict[str, float | None]] = {
     "Claude 3.5 Sonnet": {
         "tau_retail": 69.2,
         "tau_airline": 46.0,
@@ -111,8 +111,8 @@ TABLE_3_SCORES: dict[str, dict[str, float | None]] = {
     },
 }
 
-# Table 5 (raw ranks, 1 = best) — still used for §4.3 prose claims.
-TABLE_5_RANKS: dict[str, dict[str, int | None]] = {
+# Raw ranks (1 = best).
+EXPECTED_RANKS: dict[str, dict[str, int | None]] = {
     "o3-mini": {
         "tau_retail": 12,
         "tau_airline": None,
@@ -163,9 +163,9 @@ TABLE_5_RANKS: dict[str, dict[str, int | None]] = {
     },
 }
 
-# Table 5 (percentile-normalized): 0 = best, 100 = worst; spread = max − min.
+# Percentile-normalized ranks: 0 = best, 100 = worst; spread = max − min.
 # Values are round(100 * (rank − 1) / (n − 1)).
-TABLE_5_PERCENTILES: dict[str, dict[str, int | None]] = {
+EXPECTED_PERCENTILES: dict[str, dict[str, int | None]] = {
     "o4-mini": {
         "tau_retail": 36,
         "tau_airline": 89,
@@ -216,8 +216,8 @@ TABLE_5_PERCENTILES: dict[str, dict[str, int | None]] = {
     },
 }
 
-# Figure 1 / §4.1: Spearman ρ (rounded to 2 decimals in paper), n, p-values, bootstrap CIs.
-# p_* / ci_* keys are optional checks where the paper states them explicitly.
+# Spearman ρ (rounded to 2 decimals), n, p-values, bootstrap CIs.
+# Optional p_* / ci_* keys cover claims stated explicitly in the analysis summary.
 CORRELATIONS: dict[tuple[str, str], dict] = {
     ("tau_retail", "tau_airline"): {"rho": 0.75, "n": 10, "ci": (0.23, 0.95)},
     ("tau_retail", "swe_bench"): {"rho": 0.81, "n": 13, "ci": (0.44, 0.95)},
@@ -246,7 +246,7 @@ SUMMARY_STATS = {
     "abstract_inversion_rate_pct_rounded": 22,
 }
 
-# Table 4: ranking inversion counts and rates.
+# Ranking inversion counts and rates.
 INVERSIONS: dict[tuple[str, str], tuple[int, int, float]] = {
     ("tau_retail", "tau_airline"): (10, 45, 22.2),
     ("tau_retail", "swe_bench"): (14, 78, 17.9),
@@ -265,7 +265,7 @@ COVERAGE: dict[str, tuple[int, int, int]] = {
     "tau_airline": (10, 15, 67),
 }
 
-# §4.2–§4.3 prose rank/score claims.
+# Rank/score claims used in the analysis narrative.
 PROSE_CLAIMS = {
     "o4-mini_gpqa_rank": 2,
     "o4-mini_mmlu_rank": 2,

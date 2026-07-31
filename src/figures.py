@@ -1,4 +1,4 @@
-"""Generate Figures 1–3 from the construct validity audit."""
+"""Generate correlation, scatter, and rank-profile figures."""
 
 from __future__ import annotations
 
@@ -44,7 +44,7 @@ def figure1_correlation_heatmap(
     output: Path,
     correlations: list | None = None,
 ) -> None:
-    """Figure 1: cross-benchmark Spearman correlation heatmap with bootstrap CIs."""
+    """Cross-benchmark Spearman correlation heatmap with bootstrap CIs."""
     from .analyze import pairwise_spearman
 
     labels = [BENCHMARK_LABELS[c] for c in BENCHMARK_COLUMNS]
@@ -119,7 +119,7 @@ def _scatter_with_labels(
 
 
 def figure2_score_relationships(scores: pd.DataFrame, output: Path) -> None:
-    """Figure 2: τ-Retail vs SWE-bench and τ-Retail vs GPQA scatter plots."""
+    """τ-Retail vs SWE-bench and τ-Retail vs GPQA scatter plots."""
     fig, axes = plt.subplots(1, 2, figsize=(11, 4.5))
     _scatter_with_labels(
         axes[0],
@@ -142,7 +142,7 @@ def figure2_score_relationships(scores: pd.DataFrame, output: Path) -> None:
 
 
 def figure3_rank_profiles(scores: pd.DataFrame, output: Path) -> None:
-    """Figure 3: model rank profiles across benchmarks."""
+    """Model rank profiles across benchmarks."""
     ranks = compute_ranks(scores)
     labels = [BENCHMARK_LABELS[c] for c in BENCHMARK_COLUMNS]
     x = np.arange(len(BENCHMARK_COLUMNS))
